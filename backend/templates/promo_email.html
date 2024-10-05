@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8">
+    <style>
+      /* Inline CSS styles for email compatibility */
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f4f4f4;
+      }
+      .email-container {
+        max-width: 600px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        font-family: 'Helvetica Neue', Arial, sans-serif;
+        color: #555555;
+      }
+      .header {
+        background-color: #ffffff; /* Changed header background to white */
+        padding: 20px;
+        text-align: center;
+        color: #333333; /* Adjusted text color for contrast */
+      }
+      .header .logo-container {
+        display: inline-block;
+        background-color: #0097B2; /* Added background color behind logo */
+        padding: 10px;
+        border-radius: 5px; /* Optional: adds rounded corners */
+      }
+      .header img {
+        max-width: 120px;
+        display: block;
+      }
+      .header h1 {
+        margin: 15px 0 0 0;
+        font-size: 28px;
+        font-weight: normal;
+      }
+      .content {
+        padding: 30px 20px;
+      }
+      .content h2 {
+        color: #333333;
+        font-size: 24px;
+        margin-top: 0;
+      }
+      .content p {
+        line-height: 1.6;
+        margin: 15px 0;
+      }
+      .button {
+        display: inline-block;
+        padding: 12px 25px;
+        margin-top: 20px;
+        background-color: #0097B2;
+        color: #ffffff;
+        text-decoration: none;
+        border-radius: 5px;
+        font-size: 16px;
+      }
+      .footer {
+        background-color: #f4f4f4;
+        padding: 20px;
+        text-align: center;
+        font-size: 12px;
+        color: #999999;
+      }
+      .social-icons {
+        margin: 20px 0;
+      }
+      .social-icons img {
+        width: 32px;
+        margin: 0 5px;
+      }
+      @media screen and (max-width: 600px) {
+        .content,
+        .header,
+        .footer {
+          padding: 15px;
+        }
+        .content h2 {
+          font-size: 22px;
+        }
+        .button {
+          font-size: 14px;
+          padding: 10px 20px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <!-- Header -->
+      <div class="header">
+        <div class="logo-container">
+          <img src="/images/logo.png" alt="Ladimood Logo">
+        </div>
+        <h1>Welcome to Ladimood</h1>
+      </div>
+      <!-- Content -->
+      <div class="content">
+        <h2>Hi {{ receiver_name }},</h2>
+        <p>Your friend has invited you to discover <strong>Ladimood</strong>!</p>
+        <p>We're excited to share our latest collections with you. Explore a variety of high-quality products crafted to elevate your style and comfort.</p>
+        <button class="button">Start Exploring><a href="https://www.ladimood.com">
+        </button>
+        <p>If you have any questions, feel free to reach out to our support team at any time.</p>
+        <p>Best regards,<br>The Ladimood Team</p>
+      </div>
+        &copy; 2023 Ladimood. All rights reserved.<br>
+      </div>
+    </div>
+  </body>
+</html>

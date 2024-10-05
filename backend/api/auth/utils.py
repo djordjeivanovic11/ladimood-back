@@ -1,0 +1,143 @@
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
+import os
+from datetime import datetime, timedelta, timezone
+from datetime import datetime, timedelta
+from smtplib import SMTP_SSL
+from typing import Optional
+from jose import ExpiredSignatureError, JWTError, jwt 
+from passlib.context import CryptContext
+from fastapi import HTTPException, status
+from sqlalchemy.orm import Session
+from database import models
+from fastapi.security import OAuth2PasswordBearer
+from database import db as database
+from fastapi import Depends
+import api.auth.utils as utils
+
+
+# Environment variables for security
+SECRET_KEY = "45e56d94efb1543568531272e11c325e165f288391b747abf45f6364afa578d0"
+ALGORITHM = "HS256"
+ACCESS_TOKEN_EXPIRE_MINUTES = 60
+RESET_TOKEN_EXPIRE_MINUTES = 15
+REFRESH_TOKEN_EXPIRE_DAYS = 7
+
+pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
+
+def verify_password(plain_password: str, hashed_password: str) -> bool:
+    return pwd_context.verify(plain_password, hashed_password)
+
+def get_password_hash(password: str) -> str:
+    return pwd_context.hash(password)
+
+def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now(tz=timezone.utc) + expires_delta
+    else:
+        expire = datetime.now(tz=timezone.utc) + timedelta(minutes=15)
+    to_encode.update({"exp": expire})
+    
+    # Securely encode JWT
+    encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+    return encoded_jwt
+
+def create_refresh_token(data: dict) -> str:
+    expire = datetime.now() + timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS)
+    to_encode = data.copy()
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def decode_token(token: str):
+    try:
+        # Decode the token with a secure secret key
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload  # Return the decoded payload directly
+    except ExpiredSignatureError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token has expired",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+    except JWTError:
+        raise HTTPException(
+            status_code=status.HTTP_401_UNAUTHORIZED,
+            detail="Token is invalid",
+            headers={"WWW-Authenticate": "Bearer"},
+        )
+
+
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
+
+
+def get_current_user(
+    token: str = Depends(oauth2_scheme),
+    db: Session = Depends(database.get_db)
+):
+    print (f"Token: {token}") # Log the token for debugging exists - checked
+    credentials_exception = HTTPException(
+        status_code=status.HTTP_401_UNAUTHORIZED,
+        detail="Could not validate credentials",
+        headers={"WWW-Authenticate": "Bearer"},
+    )
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        print(f"Decoded payload from token: {payload}")  # Log the decoded payload for debugging
+        email: str = payload.get("sub")
+        print(f"Decoded email from token: {email}")  # Log the decoded email for debugging
+        if email is None:
+            raise credentials_exception
+    except JWTError as e:
+        print(f"JWTError during token validation: {str(e)}")  # Log any JWT errors
+        raise credentials_exception
+
+
+    user = db.query(models.User).filter(models.User.email == email).first()
+    if user is None:
+        raise credentials_exception
+
+    return user
+
+
+def send_reset_email(email: str, token: str):
+    reset_link = f"http://localhost:3000/auth/change-password?token={token}"
+    subject = "Password Reset Request"
+    body = f"Click the link to reset your password: {reset_link}"
+    
+    sender_email = "djordjeivanovic65@gmail.com"
+    sender_password = "owlj ddmq zjce gues"
+    message = MIMEMultipart()
+    message["From"] = sender_email
+    message["To"] = email
+    message["Subject"] = subject
+    message.attach(MIMEText(body, "plain"))
+
+    with SMTP_SSL("smtp.gmail.com", 465) as server:
+        server.login(sender_email, sender_password)
+        server.sendmail(sender_email, email, message.as_string())
+
+def create_reset_token(data: dict, expires_delta: Optional[timedelta] = None) -> str:
+    to_encode = data.copy()
+    if expires_delta:
+        expire = datetime.now() + expires_delta
+    else:
+        expire = datetime.now() + timedelta(minutes=RESET_TOKEN_EXPIRE_MINUTES)
+    to_encode.update({"exp": expire})
+    return jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
+
+def verify_reset_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload.get("sub")
+    except JWTError:
+        return None
+    
+def verify_token(token: str):
+    try:
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        return payload.get("sub")
+    except JWTError:
+        return None
+    
+
