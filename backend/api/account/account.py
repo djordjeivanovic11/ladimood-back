@@ -20,11 +20,7 @@ router = APIRouter()
 #-----------------------------------#
 
 @router.get("/details", response_model=schemas.User)
-def get_user_details(db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_user)):
-    return current_user
-
-@router.get("/user", response_model=schemas.User)
-def get_current_user_info(current_user: models.User = Depends(get_current_user)):
+def get_user_details(current_user: models.User = Depends(get_current_user)):
     return current_user
 
 #-----------------------------------#
@@ -37,6 +33,7 @@ def get_address(db: Session = Depends(database.get_db), current_user: models.Use
     if not address:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Address not found")
     return address
+
 @router.post("/address", response_model=schemas.Address)
 def add_or_update_address(address: schemas.AddressBase, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_user)):
     existing_address = db.query(models.Address).filter(models.Address.user_id == current_user.id).first()
@@ -55,7 +52,7 @@ def add_or_update_address(address: schemas.AddressBase, db: Session = Depends(da
         new_address = models.Address(**address.model_dump(), user_id=current_user.id)
         db.add(new_address)
         db.commit()
-        db.refresh(new_address)  # Ensure the new address is refreshed to return the correct data
+        db.refresh(new_address) 
         return new_address
 
 
@@ -73,11 +70,74 @@ def delete_address(db: Session = Depends(database.get_db), current_user: models.
 #-----------------------------------#
 
 @router.get("/orders", response_model=List[schemas.Order])
-def get_orders(db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_user)):
-    orders = db.query(models.Order).filter(models.Order.user_id == current_user.id).all()
-    if not orders:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="No orders found for this user.")
-    return orders
+def get_orders(
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    """
+    Retrieve all orders for the authenticated user, including order items
+    and product details.
+    """
+    try:
+        # Query orders with eager loading of items and their associated products
+        orders = (
+            db.query(models.Order)
+            .filter(models.Order.user_id == current_user.id)
+            .options(
+                joinedload(models.Order.items)
+                .joinedload(models.OrderItem.product)
+                .joinedload(models.Product.category)  # Include category if needed
+            )
+            .all()
+        )
+
+        if not orders:
+            return []  # Return an empty list instead of raising an HTTPException
+
+        # Serialize orders into response format
+        serialized_orders = [
+            schemas.Order(
+                id=order.id,
+                user_id=order.user_id,
+                status=order.status.value,
+                total_price=order.total_price,
+                items=[
+                    schemas.OrderItem(
+                        id=item.id,
+                        product=schemas.Product(
+                            id=item.product.id,
+                            name=item.product.name,
+                            description=item.product.description,  # Optional in schema
+                            price=item.product.price,
+                            created_at=item.product.created_at,
+                            updated_at=item.product.updated_at,
+                            category=schemas.Category(
+                                id=item.product.category.id,
+                                name=item.product.category.name
+                            ) if item.product.category else None,
+                        ),
+                        quantity=item.quantity,
+                        color=item.color,
+                        size=item.size.value if hasattr(item.size, 'value') else item.size,
+                        price=item.price,
+                    )
+                    for item in order.items
+                ],
+                created_at=order.created_at,
+                updated_at=order.updated_at,
+            )
+            for order in orders
+        ]
+
+        return serialized_orders
+
+    except Exception as e:
+        # Handle unexpected errors gracefully
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"An error occurred while retrieving orders: {str(e)}"
+        )
+
 
 @router.get("/orders/{order_id}", response_model=OrderResponse)
 def get_order(order_id: str, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_user)):
@@ -120,25 +180,6 @@ def get_order(order_id: str, db: Session = Depends(database.get_db), current_use
     )
     return response_data
 
-@router.get("/past-orders", response_model=List[schemas.Order])
-def get_user_past_orders(
-    db: Session = Depends(database.get_db),
-    current_user: models.User = Depends(get_current_user),
-):
-    orders = (
-        db.query(models.Order)
-        .options(joinedload(models.Order.items))
-        .filter(models.Order.user_id == current_user.id)
-        .all()
-    )
-    if not orders:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND,
-            detail="No orders found for this user.",
-        )
-    return orders
-
-
 
 @router.post("/orders", response_model=schemas.OrderResponse)
 def create_order(
@@ -166,7 +207,7 @@ def create_order(
             quantity=item.quantity,
             color=item.color,
             size=item.size,
-            price=item.price  # Ensure price is included if needed
+            price=item.price  
         )
         db.add(order_item)
     db.commit()
@@ -200,6 +241,7 @@ def create_order(
     response_data = schemas.OrderResponse(
         id=hashed_order_id,
         user_id=order_with_items.user_id,
+        plain_id=new_order.id,
         status=order_with_items.status.value,
         total_price=order_with_items.total_price,
         items=[

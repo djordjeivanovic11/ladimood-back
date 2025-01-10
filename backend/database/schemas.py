@@ -3,8 +3,7 @@ from typing import Optional, List
 from enum import Enum
 import datetime
 
-                                        # AUTHENTICATION SCHEMAS #
-#---------------------------------------------------------------------------------------------#
+
 
 # AUTHENTICATION SCHEMAS #
 class Token(BaseModel):
@@ -115,13 +114,12 @@ class Product(ProductBase):
 
 
 # CART AND ORDERING SCHEMAS #
-# Updated CartItem schema
 class CartItem(BaseModel):
     id: int
-    product: Product  # Assuming Product is already defined in your schemas
+    product: Product  
     quantity: int
-    color: str  # New field for color
-    size: SizeEnum  # New field for size
+    color: str  
+    size: SizeEnum
 
     class Config:
         from_attributes = True
@@ -135,41 +133,43 @@ class Cart(BaseModel):
         from_attributes = True
 
 # Updated OrderItem schema
-
 class OrderItem(BaseModel):
-    id: Optional[int] = None 
-    product: Product  
+    id: Optional[int] = None
+    product: Product  # Full Product object
     quantity: int
     color: str
-    size: SizeEnum
-    price: float 
+    size: SizeEnum  # Enum type for internal use
+    price: float
 
     class Config:
-        from_attributes = True
+        orm_mode = True  # Use orm_mode instead of from_attributes
+
 
 class OrderItemResponse(BaseModel):
     id: int
     product_id: int
-    product_name: str
+    product_name: str  # Flattened field for API response
     quantity: int
     color: str
-    size: str
-    price: float 
+    size: str  # String for API response
+    price: float
 
     class Config:
-        orm_mode = True
+        orm_mode = True  # Consistent with ORM models
+
 
 class OrderResponse(BaseModel):
-    id: str  
+    id: str
     user_id: int
     status: str
     total_price: float
-    items: List[OrderItemResponse]  
+    items: List[OrderItemResponse]  # List of flattened order items
     created_at: datetime.datetime
     updated_at: datetime.datetime
 
     class Config:
-        orm_mode = True
+        orm_mode = True  # Supports ORM compatibility
+
 
 class Order(BaseModel):
     id: int
@@ -200,9 +200,9 @@ class OrderCreate(BaseModel):
 # WISHLIST SCHEMA #
 class WishlistItem(BaseModel):
     id: int
-    product: Product  # Assuming Product is already defined in your schemas
-    color: str  # New field for color
-    size: SizeEnum  # New field for size
+    product: Product
+    color: str  
+    size: SizeEnum  
 
     class Config:
         from_attributes = True
@@ -226,6 +226,9 @@ class SalesRecord(BaseModel):
     class Config:
         from_attributes = True
 
+
+# NEWSLETTER SCHEMAS #
+
 class NewsletterUserSchema(BaseModel):
     email: EmailStr
 
@@ -233,6 +236,7 @@ class NewsletterUserSchema(BaseModel):
         from_attributes = True
 
 
+# REFERRAL SCHEMAS #
 class Referral(BaseModel):
     name: str
     email: str

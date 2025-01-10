@@ -4,7 +4,6 @@ from database import models
 import smtplib
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
-from email.mime.image import MIMEImage
 
 # Fetch user address by user ID
 def get_user_address(db: Session, user_id: int):

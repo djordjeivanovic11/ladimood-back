@@ -1,14 +1,22 @@
-from sqlalchemy import Boolean, Column, ForeignKey, Integer, String, Float, DateTime
+from sqlalchemy import (
+    Boolean,
+    Column,
+    ForeignKey,
+    Integer,
+    String,
+    Float,
+    DateTime,
+    Enum
+)
 from sqlalchemy.orm import relationship
-from sqlalchemy.ext.declarative import declarative_base 
+from sqlalchemy.ext.declarative import declarative_base
 import datetime
-from sqlalchemy import Enum as SqlEnum  # Import SQLAlchemy's Enum as SqlEnum
-from enum import Enum as PyEnum  # Import Python's Enum as PyEnum
+import enum
 
 Base = declarative_base()
 
-# USEFUL ENUMS #
-class Size(str, PyEnum):
+# 1) Define Python Enums
+class SizeEnum(str, enum.Enum):
     XS = "XS"
     S = "S"
     M = "M"
@@ -16,19 +24,22 @@ class Size(str, PyEnum):
     XL = "XL"
     XXL = "XXL"
 
-class OrderStatus(str, PyEnum):  # Define your OrderStatus Enum using Python's Enum
+
+class OrderStatus(str, enum.Enum):
     CREATED = "CREATED"
     PENDING = "PENDING"
     SHIPPED = "SHIPPED"
     DELIVERED = "DELIVERED"
     CANCELLED = "CANCELLED"
 
-# USER DETAILS #
+
+# 2) Define Models
 class Role(Base):
     __tablename__ = "roles"
 
     id = Column(Integer, primary_key=True, index=True)
     name = Column(String, unique=True, index=True)
+
 
 class User(Base):
     __tablename__ = "users"
@@ -50,6 +61,7 @@ class User(Base):
     sales_records = relationship("SalesRecord", back_populates="user")
     wishlist = relationship("Wishlist", back_populates="user", uselist=False)
 
+
 class Address(Base):
     __tablename__ = "address"
 
@@ -63,7 +75,7 @@ class Address(Base):
 
     user = relationship("User", back_populates="address")
 
-# PRODUCT DETAILS #
+
 class Category(Base):
     __tablename__ = "categories"
 
@@ -73,6 +85,7 @@ class Category(Base):
 
     products = relationship("Product", back_populates="category")
 
+
 class Product(Base):
     __tablename__ = "products"
 
@@ -80,14 +93,14 @@ class Product(Base):
     name = Column(String, index=True)
     description = Column(String, nullable=False)
     price = Column(Float, nullable=False)
-    image_url = Column(String, nullable=True)  
+    image_url = Column(String, nullable=True)
     category_id = Column(Integer, ForeignKey("categories.id"))
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
 
     category = relationship("Category", back_populates="products")
 
-# CART FUNCTIONALITY #
+
 class Cart(Base):
     __tablename__ = "cart"
 
@@ -97,6 +110,7 @@ class Cart(Base):
     user = relationship("User", back_populates="cart")
     items = relationship("CartItem", back_populates="cart")
 
+
 class CartItem(Base):
     __tablename__ = "cart_items"
 
@@ -104,19 +118,19 @@ class CartItem(Base):
     cart_id = Column(Integer, ForeignKey("cart.id"))
     product_id = Column(Integer, ForeignKey("products.id"))
     quantity = Column(Integer, default=1)
-    color = Column(String, nullable=False)  # New field for storing color
-    size = Column(SqlEnum(Size), nullable=False)  # New field for storing size
+    color = Column(String, nullable=False)
+    size = Column(Enum(SizeEnum, name="size_enum"), nullable=False)  # <--- Proper usage
 
     cart = relationship("Cart", back_populates="items")
     product = relationship("Product")
 
-# ORDERING FUNCTIONALITY #
+
 class Order(Base):
     __tablename__ = "orders"
 
     id = Column(Integer, primary_key=True, index=True, autoincrement=True)
     user_id = Column(Integer, ForeignKey("users.id"))
-    status = Column(SqlEnum(OrderStatus), default=OrderStatus.CREATED)  # Use SqlAlchemy Enum here with values passed
+    status = Column(Enum(OrderStatus, name="order_status_enum"), default=OrderStatus.CREATED)  
     total_price = Column(Float, nullable=False)
     created_at = Column(DateTime, default=datetime.datetime.now)
     updated_at = Column(DateTime, default=datetime.datetime.now, onupdate=datetime.datetime.now)
@@ -125,6 +139,7 @@ class Order(Base):
     items = relationship("OrderItem", back_populates="order")
     sales_records = relationship("SalesRecord", back_populates="order")
 
+
 class OrderItem(Base):
     __tablename__ = 'order_items'
     id = Column(Integer, primary_key=True, autoincrement=True)
@@ -132,13 +147,13 @@ class OrderItem(Base):
     product_id = Column(Integer, ForeignKey("products.id"))
     quantity = Column(Integer, default=1)
     color = Column(String, nullable=False)
-    size = Column(SqlEnum(Size), nullable=False)
-    price = Column(Float, nullable=False)  
+    size = Column(Enum(SizeEnum, name="size_enum"), nullable=False)
+    price = Column(Float, nullable=False)
 
     order = relationship("Order", back_populates="items")
     product = relationship("Product")
 
-# WISHLIST FUNCTIONALITY #
+
 class Wishlist(Base):
     __tablename__ = "wishlist"
 
@@ -148,19 +163,21 @@ class Wishlist(Base):
     user = relationship("User", back_populates="wishlist")
     items = relationship("WishlistItem", back_populates="wishlist")
 
+
 class WishlistItem(Base):
     __tablename__ = "wishlist_items"
 
     id = Column(Integer, primary_key=True, autoincrement=True)
     wishlist_id = Column(Integer, ForeignKey("wishlist.id"))
     product_id = Column(Integer, ForeignKey("products.id"))
-    color = Column(String, nullable=False)  # New field for storing color
-    size = Column(SqlEnum(Size), nullable=False)  # New field for storing size
+    color = Column(String, nullable=False)
+    # Also wrap this in Enum(...)
+    size = Column(Enum(SizeEnum, name="size_enum"), nullable=False)
 
     wishlist = relationship("Wishlist", back_populates="items")
     product = relationship("Product")
 
-# RECORD OF ALL SALES BY CUSTOMERS #
+
 class SalesRecord(Base):
     __tablename__ = "sales"
 
@@ -170,6 +187,7 @@ class SalesRecord(Base):
 
     user = relationship("User", back_populates="sales_records")
     order = relationship("Order", back_populates="sales_records")
+
 
 class NewsletterUser(Base):
     __tablename__ = "newsletter_users"
