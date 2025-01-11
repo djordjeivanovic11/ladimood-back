@@ -171,7 +171,6 @@ class WishlistItem(Base):
     wishlist_id = Column(Integer, ForeignKey("wishlist.id"))
     product_id = Column(Integer, ForeignKey("products.id"))
     color = Column(String, nullable=False)
-    # Also wrap this in Enum(...)
     size = Column(Enum(SizeEnum, name="size_enum"), nullable=False)
 
     wishlist = relationship("Wishlist", back_populates="items")
