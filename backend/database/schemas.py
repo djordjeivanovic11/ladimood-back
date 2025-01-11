@@ -157,18 +157,20 @@ class OrderItemResponse(BaseModel):
     class Config:
         orm_mode = True  # Consistent with ORM models
 
-
 class OrderResponse(BaseModel):
-    id: str
+    id: int
     user_id: int
+    plain_id: Optional[int] = None  # keep an optional plain_id if you need it
+    user: Optional[User]  # Full user details from the existing User schema
     status: str
     total_price: float
-    items: List[OrderItemResponse]  # List of flattened order items
+    items: List[OrderItemResponse]
     created_at: datetime.datetime
     updated_at: datetime.datetime
+    address: Optional[dict]  # Fetched via user_id
 
     class Config:
-        orm_mode = True  # Supports ORM compatibility
+        orm_mode = True
 
 
 class Order(BaseModel):
@@ -218,13 +220,27 @@ class Wishlist(BaseModel):
 
 
 # SALES RECORD SCHEMAS #
-class SalesRecord(BaseModel):
+class SalesRecordBase(BaseModel):
+    user_id: int
+    order_id: int
+
+
+class SalesRecordCreate(SalesRecordBase):
+    pass
+
+
+class SalesRecord(SalesRecordBase):
     id: int
-    user: User
-    orders: List[Order]
+    user: Optional["User"] 
+    order: Optional["Order"]
 
     class Config:
-        from_attributes = True
+        orm_mode = True
+
+
+class UpdateStatusRequest(BaseModel):
+    status: OrderStatusEnum
+
 
 
 # NEWSLETTER SCHEMAS #

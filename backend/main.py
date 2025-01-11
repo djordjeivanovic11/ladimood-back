@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from database import models, db as database
 from api.auth import auth
 from api.account import account
+from api.management import management
 
 
 app = FastAPI()
@@ -29,4 +30,5 @@ app.add_middleware(
 
 app.include_router(auth.router, prefix="/api/auth", tags=["auth"])
 app.include_router(account.router, prefix="/api/account", tags=["account"])
+app.include_router(management.router, prefix="/api/management", tags=["management"])
 

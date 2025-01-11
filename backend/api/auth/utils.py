@@ -7,21 +7,22 @@ from smtplib import SMTP_SSL
 from typing import Optional
 from jose import ExpiredSignatureError, JWTError, jwt 
 from passlib.context import CryptContext
-from fastapi import HTTPException, status
+from fastapi import HTTPException, status, Request
 from sqlalchemy.orm import Session
 from database import models
 from fastapi.security import OAuth2PasswordBearer
 from database import db as database
 from fastapi import Depends
 import api.auth.utils as utils
+import dotenv
 
+dotenv.load_dotenv()
 
-# Environment variables for security
-SECRET_KEY = "45e56d94efb1543568531272e11c325e165f288391b747abf45f6364afa578d0"
-ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60
-RESET_TOKEN_EXPIRE_MINUTES = 15
-REFRESH_TOKEN_EXPIRE_DAYS = 7
+SECRET_KEY = os.getenv("SECRET_KEY")
+ALGORITHM = os.getenv("ALGORITHM")
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
+REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS"))
+RESET_TOKEN_EXPIRE_MINUTES = int(os.getenv("RESET_TOKEN_EXPIRE_MINUTES"))
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -140,4 +141,18 @@ def verify_token(token: str):
     except JWTError:
         return None
     
-
+async def get_refresh_token(request: Request) -> str:
+    try:
+        body = await request.json()
+        refresh_token = body.get("refresh_token")
+        if not refresh_token:
+            raise HTTPException(
+                status_code=status.HTTP_400_BAD_REQUEST,
+                detail="Refresh token not provided",
+            )
+        return refresh_token
+    except Exception:
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail="Invalid request body",
+        )
