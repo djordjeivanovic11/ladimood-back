@@ -1,5 +1,5 @@
 from pydantic import BaseModel, EmailStr
-from typing import Optional, List
+from typing import Optional, List, Union
 from enum import Enum
 import datetime
 
@@ -19,7 +19,6 @@ class Message(BaseModel):
 
 class ForgotPasswordRequest(BaseModel):
     email: EmailStr
-
 
 
 # ENUMS #
@@ -158,20 +157,33 @@ class OrderItemResponse(BaseModel):
         orm_mode = True  # Consistent with ORM models
 
 class OrderResponse(BaseModel):
-    id: int
+    id: Union[int, str]  # Support both int and hashed string
     user_id: int
-    plain_id: Optional[int] = None  # keep an optional plain_id if you need it
-    user: Optional[User]  # Full user details from the existing User schema
+    user: Optional[User] = None  # Make it optional if not always included
     status: str
     total_price: float
     items: List[OrderItemResponse]
     created_at: datetime.datetime
     updated_at: datetime.datetime
-    address: Optional[dict]  # Fetched via user_id
+    address: Optional[dict] = None  # Make it optional if not always included
 
     class Config:
         orm_mode = True
 
+class PublicOrderResponse(BaseModel):
+    id: str  # Change to str to accommodate hashed IDs
+    user_id: int
+    plain_id: Optional[int] = None  # Keep as optional if needed
+    user: Optional[User] = None  # Optional user details
+    status: str
+    total_price: float
+    items: List[OrderItemResponse]
+    created_at: datetime.datetime
+    updated_at: datetime.datetime
+    address: Optional[dict] = None  # Optional address field
+
+    class Config:
+        orm_mode = True
 
 class Order(BaseModel):
     id: int
@@ -259,3 +271,10 @@ class Referral(BaseModel):
 
 class ReferralRequest(BaseModel):
     referrals: List[Referral]
+
+class ContactForm(BaseModel):
+    name: str
+    email: EmailStr
+    phone: str
+    message: str
+    inquiry_type: str

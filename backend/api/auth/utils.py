@@ -23,6 +23,8 @@ ALGORITHM = os.getenv("ALGORITHM")
 ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES"))
 REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS"))
 RESET_TOKEN_EXPIRE_MINUTES = int(os.getenv("RESET_TOKEN_EXPIRE_MINUTES"))
+EMAIL = os.getenv("EMAIL")
+PASSWORD = os.getenv("EMAIL_PASSWORD")
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
@@ -106,8 +108,8 @@ def send_reset_email(email: str, token: str):
     subject = "Password Reset Request"
     body = f"Click the link to reset your password: {reset_link}"
     
-    sender_email = "djordjeivanovic65@gmail.com"
-    sender_password = "owlj ddmq zjce gues"
+    sender_email = EMAIL
+    sender_password = PASSWORD
     message = MIMEMultipart()
     message["From"] = sender_email
     message["To"] = email

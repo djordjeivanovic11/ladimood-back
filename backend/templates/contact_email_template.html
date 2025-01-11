@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>Contact Form Submission - Ladimood</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <style>
+      /* Global Reset */
+      body {
+        margin: 0;
+        padding: 0;
+        background-color: #f8fafc;
+        font-family: "Helvetica Neue", Arial, sans-serif;
+        color: #4a4a4a;
+      }
+
+      .email-container {
+        max-width: 700px;
+        margin: 0 auto;
+        background-color: #ffffff;
+        border-radius: 12px;
+        overflow: hidden;
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+      }
+
+      .header {
+        background: linear-gradient(135deg, #0097b2, #007a99);
+        color: #ffffff;
+        text-align: center;
+        padding: 30px 20px;
+      }
+
+      .header h1 {
+        margin: 0;
+        font-size: 28px;
+        font-weight: 600;
+        letter-spacing: 1px;
+        text-transform: uppercase;
+      }
+
+      .header .tagline {
+        font-size: 16px;
+        margin-top: 5px;
+        font-weight: 300;
+      }
+
+      .content {
+        padding: 40px 30px;
+      }
+
+      .content h2 {
+        color: #0097b2;
+        font-size: 22px;
+        margin-top: 0;
+        margin-bottom: 20px;
+      }
+
+      .content p {
+        line-height: 1.8;
+        margin: 15px 0;
+        font-size: 16px;
+      }
+
+      .content strong {
+        font-weight: 600;
+      }
+
+      .button-container {
+        text-align: center;
+        margin: 30px 0;
+      }
+
+      .button {
+        background-color: #0097b2;
+        color: #ffffff;
+        text-decoration: none;
+        padding: 12px 25px;
+        border-radius: 8px;
+        font-size: 16px;
+        display: inline-block;
+        transition: background-color 0.3s ease;
+      }
+
+      .button:hover {
+        background-color: #007a99;
+      }
+
+      .footer {
+        background-color: #f8fafc;
+        text-align: center;
+        font-size: 14px;
+        color: #999999;
+        padding: 20px 10px;
+        border-top: 1px solid #e6e6e6;
+      }
+
+      .footer a {
+        color: #0097b2;
+        text-decoration: none;
+      }
+
+      @media screen and (max-width: 600px) {
+        .content {
+          padding: 20px 15px;
+        }
+
+        .button {
+          padding: 10px 20px;
+          font-size: 14px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div class="email-container">
+      <!-- Header -->
+      <div class="header">
+        <h1>Ladimood</h1>
+      </div>
+
+      <!-- Content -->
+      <div class="content">
+        <h2>New Contact Form Submission</h2>
+        <p><strong>Name:</strong> {{name}}</p>
+        <p><strong>Email:</strong> {{email}}</p>
+        <p><strong>Phone:</strong> {{phone}}</p>
+        <p><strong>Inquiry Type:</strong> {{inquiry_type}}</p>
+
+        <h2>Message:</h2>
+        <p>{{message}}</p>
+
+        <div class="button-container">
+          <a href="https://www.ladimood.com" class="button">Visit Ladimood</a>
+        </div>
+      </div>
+
+      <!-- Footer -->
+      <div class="footer">
+        &copy; 2025 Ladimood. All rights reserved. <br />
+        <a href="https://www.ladimood.com">www.ladimood.com</a>
+      </div>
+    </div>
+  </body>
+</html>

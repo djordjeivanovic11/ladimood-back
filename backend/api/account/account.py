@@ -7,7 +7,7 @@ from api.auth.utils import get_current_user
 from api.account.utils import (
     add_to_wishlist, remove_from_wishlist, add_to_cart, remove_from_cart, send_order_confirmation_email, send_promo_email
 )
-from database.schemas import OrderItemResponse, OrderResponse, Product as ProductSchema, ReferralRequest
+from database.schemas import OrderItemResponse, PublicOrderResponse, OrderResponse, Product as ProductSchema, ReferralRequest
 from database.models import Product
 from hashids import Hashids
 
@@ -180,8 +180,7 @@ def get_order(order_id: str, db: Session = Depends(database.get_db), current_use
     )
     return response_data
 
-
-@router.post("/orders", response_model=schemas.OrderResponse)
+@router.post("/orders", response_model=schemas.PublicOrderResponse)
 def create_order(
     order: schemas.OrderCreate, 
     db: Session = Depends(database.get_db), 
@@ -220,7 +219,6 @@ def create_order(
         .first()
     )
 
-    # Hash the order ID
     hashed_order_id = hashids.encode(new_order.id)
 
     # Send the order confirmation email
@@ -238,10 +236,11 @@ def create_order(
         )
 
     # Build the response data
-    response_data = schemas.OrderResponse(
-        id=hashed_order_id,
+    response_data = schemas.PublicOrderResponse(
+        id=hashed_order_id,  # Use hashed ID
+        plain_id=new_order.id,  # Include plain integer ID
         user_id=order_with_items.user_id,
-        plain_id=new_order.id,
+        user=None,  # Optional, or provide user details if needed
         status=order_with_items.status.value,
         total_price=order_with_items.total_price,
         items=[
@@ -257,10 +256,11 @@ def create_order(
             for item in order_with_items.items
         ],
         created_at=order_with_items.created_at,
-        updated_at=order_with_items.updated_at
+        updated_at=order_with_items.updated_at,
     )
 
     return response_data
+
 
 
 @router.delete("/order/{order_id}", status_code=status.HTTP_204_NO_CONTENT)
@@ -356,17 +356,26 @@ def remove_cart_item(item_id: int, db: Session = Depends(database.get_db), curre
     return remove_from_cart(db, item_id, current_user.id)
 
 @router.delete("/cart/clear", response_model=schemas.Message)
-def clear_user_cart(db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_user)):
+def clear_user_cart(
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    # Find the user's cart
     cart = db.query(models.Cart).filter(models.Cart.user_id == current_user.id).first()
     
     if not cart:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart not found")
+        return {"message": "Cart is already empty"}
     
     try:
-        db.query(models.CartItem).filter(models.CartItem.cart_id == cart.id).delete()
+        # Delete the cart associated with the user
+        db.delete(cart)
         db.commit()
     except Exception as e:
-        print(f"Error clearing cart: {e}")  # Log any errors during clearing
+        print(f"Error clearing cart: {e}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail="Failed to clear the cart."
+        )
 
     return {"message": "Cart cleared successfully"}
 

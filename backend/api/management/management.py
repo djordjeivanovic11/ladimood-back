@@ -4,6 +4,7 @@ from typing import List
 from database import models, schemas, db as database
 import dotenv
 import os
+from .utils import send_contact_email
 
 dotenv.load_dotenv()
 
@@ -141,3 +142,12 @@ def update_order_status(
 
     # Return the updated order
     return to_order_response(order, db)
+
+
+@router.post("/contact", response_model=schemas.Message)
+def contact_form(data: schemas.ContactForm):
+    try:
+        send_contact_email(data.name, data.email, data.phone, data.message, data.inquiry_type)
+        return {"message": "Contact form submitted successfully."}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail="Failed to send contact form email.")
