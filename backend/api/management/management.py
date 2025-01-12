@@ -1,10 +1,11 @@
 from fastapi import APIRouter, Depends, HTTPException, status
-from sqlalchemy.orm import Session
+from sqlalchemy.orm import Session, joinedload
 from typing import List
 from database import models, schemas, db as database
 import dotenv
 import os
 from .utils import send_contact_email
+
 
 dotenv.load_dotenv()
 
@@ -17,13 +18,10 @@ RESET_TOKEN_EXPIRE_MINUTES = int(os.getenv("RESET_TOKEN_EXPIRE_MINUTES"))
 router = APIRouter()
 
 def to_order_response(db_order: models.Order, db: Session) -> schemas.OrderResponse:
-    # Fetch the user associated with the order
     db_user = db.query(models.User).filter(models.User.id == db_order.user_id).first()
 
-    # Fetch the address associated with the user
     db_address = db.query(models.Address).filter(models.Address.user_id == db_order.user_id).first()
 
-    # Construct the User schema object (or None if user doesn't exist)
     user_schema = None
     if db_user:
         user_schema = schemas.User(
@@ -32,12 +30,11 @@ def to_order_response(db_order: models.Order, db: Session) -> schemas.OrderRespo
             full_name=db_user.full_name,
             phone_number=db_user.phone_number,
             is_active=db_user.is_active,
-            role=db_user.role,  # if you'd like to load the role from DB as well
+            role=db_user.role,
             created_at=db_user.created_at,
             updated_at=db_user.updated_at,
         )
 
-    # Construct the address dictionary (or None if address doesn't exist)
     address_dict = None
     if db_address:
         address_dict = {
@@ -48,7 +45,6 @@ def to_order_response(db_order: models.Order, db: Session) -> schemas.OrderRespo
             "country": db_address.country,
         }
 
-    # Construct the OrderResponse
     return schemas.OrderResponse(
         id=db_order.id,
         user_id=db_order.user_id,
@@ -59,14 +55,24 @@ def to_order_response(db_order: models.Order, db: Session) -> schemas.OrderRespo
         updated_at=db_order.updated_at,
         items=[
             schemas.OrderItemResponse(
-                id=item.id,
-                product_id=item.product_id,
-                product_name=item.product.name,
-                quantity=item.quantity,
-                color=item.color,
-                size=item.size.value,
-                price=item.price,
-            )
+                    id=item.id,
+                    product_id=item.product_id,
+                    product_name=item.product.name,
+                    quantity=item.quantity,
+                    color=item.color,
+                    size=item.size.value,
+                    price=item.price,
+                    product={
+                        "id": item.product.id,
+                        "category": item.product.category,
+                        "created_at": item.product.created_at,
+                        "updated_at": item.product.updated_at,
+                        "image_url": item.product.image_url,
+                        "name": item.product.name,
+                        "description": item.product.description,
+                        "price": item.product.price
+                    },
+                )
             for item in db_order.items
         ],
         address=address_dict,
@@ -75,12 +81,33 @@ def to_order_response(db_order: models.Order, db: Session) -> schemas.OrderRespo
 
 @router.get("/sales", response_model=List[schemas.SalesRecord])
 def get_sales_records(db: Session = Depends(database.get_db)):
-    sales_records = db.query(models.SalesRecord).all()
-    if not sales_records:
-        raise HTTPException(
-            status_code=status.HTTP_404_NOT_FOUND, detail="No sales records found"
+    """
+    Retrieve all sales records along with user and order details.
+    """
+    sales_records = (
+        db.query(models.SalesRecord)
+        .options(
+            joinedload(models.SalesRecord.user),   
+            joinedload(models.SalesRecord.order)    
         )
+        .all()
+    )
     return sales_records
+
+
+@router.post("/sales", response_model=schemas.SalesRecord)
+def create_sales_record(request: schemas.SalesRecordCreate, db: Session = Depends(database.get_db)):
+    db_sales_record = models.SalesRecord(
+        user_id=request.user_id,
+        order_id=request.order_id,
+        date_of_sale=request.date_of_sale,
+        buyer_name=request.buyer_name,
+        price=request.price,
+    )
+    db.add(db_sales_record)
+    db.commit()
+    db.refresh(db_sales_record)
+    return db_sales_record
 
 
 
@@ -119,7 +146,6 @@ def update_order_status(
     """
     Updates the status of an order and logs the change if necessary.
     """
-    # Fetch the order
     order = db.query(models.Order).filter(models.Order.id == order_id).first()
 
     if not order:
@@ -128,19 +154,15 @@ def update_order_status(
             detail=f"Order with ID {order_id} not found"
         )
 
-    # Validate the status
     if request.status not in schemas.OrderStatusEnum.__members__.values():
         raise HTTPException(
             status_code=status.HTTP_400_BAD_REQUEST,
             detail=f"Invalid order status: {request.status}. Allowed statuses are: {list(schemas.OrderStatusEnum.__members__.keys())}",
         )
-
-    # Update the order's status
     order.status = request.status
     db.commit()
     db.refresh(order)
 
-    # Return the updated order
     return to_order_response(order, db)
 
 

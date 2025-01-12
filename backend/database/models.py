@@ -15,7 +15,6 @@ import enum
 
 Base = declarative_base()
 
-# 1) Define Python Enums
 class SizeEnum(str, enum.Enum):
     XS = "XS"
     S = "S"
@@ -180,9 +179,12 @@ class WishlistItem(Base):
 class SalesRecord(Base):
     __tablename__ = "sales"
 
-    id = Column(Integer, primary_key=True, index=True, autoincrement=True)
-    user_id = Column(Integer, ForeignKey("users.id"))
-    order_id = Column(Integer, ForeignKey("orders.id"))
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    order_id = Column(Integer, ForeignKey("orders.id"), nullable=False)
+    date_of_sale = Column(DateTime, nullable=False)
+    buyer_name = Column(String, nullable=False)
+    price = Column(Float, nullable=False)
 
     user = relationship("User", back_populates="sales_records")
     order = relationship("Order", back_populates="sales_records")

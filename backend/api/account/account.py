@@ -7,7 +7,7 @@ from api.auth.utils import get_current_user
 from api.account.utils import (
     add_to_wishlist, remove_from_wishlist, add_to_cart, remove_from_cart, send_order_confirmation_email, send_promo_email
 )
-from database.schemas import OrderItemResponse, PublicOrderResponse, OrderResponse, Product as ProductSchema, ReferralRequest
+from database.schemas import OrderItemResponse, OrderResponse, Product as ProductSchema, ReferralRequest
 from database.models import Product
 from hashids import Hashids
 
@@ -331,14 +331,13 @@ def update_cart_item(item_id: int, cart_item: schemas.CartItem, db: Session = De
     if not item:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Cart item not found")
 
-    # Update the cart item with the new details
+
     item.quantity = cart_item.quantity
     item.color = cart_item.color
     item.size = cart_item.size
 
     db.commit()
-    db.refresh(item)  # Refresh the instance with the updated data
-
+    db.refresh(item) 
     return item
 
 @router.post("/cart", response_model=schemas.CartItem)

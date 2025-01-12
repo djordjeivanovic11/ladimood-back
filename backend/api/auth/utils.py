@@ -13,7 +13,6 @@ from database import models
 from fastapi.security import OAuth2PasswordBearer
 from database import db as database
 from fastapi import Depends
-import api.auth.utils as utils
 import dotenv
 
 dotenv.load_dotenv()
@@ -42,7 +41,6 @@ def create_access_token(data: dict, expires_delta: Optional[timedelta] = None):
         expire = datetime.now(tz=timezone.utc) + timedelta(minutes=15)
     to_encode.update({"exp": expire})
     
-    # Securely encode JWT
     encoded_jwt = jwt.encode(to_encode, SECRET_KEY, algorithm=ALGORITHM)
     return encoded_jwt
 
@@ -54,9 +52,8 @@ def create_refresh_token(data: dict) -> str:
 
 def decode_token(token: str):
     try:
-        # Decode the token with a secure secret key
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        return payload  # Return the decoded payload directly
+        return payload  
     except ExpiredSignatureError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
@@ -78,7 +75,7 @@ def get_current_user(
     token: str = Depends(oauth2_scheme),
     db: Session = Depends(database.get_db)
 ):
-    print (f"Token: {token}") # Log the token for debugging exists - checked
+    print (f"Token: {token}") 
     credentials_exception = HTTPException(
         status_code=status.HTTP_401_UNAUTHORIZED,
         detail="Could not validate credentials",
@@ -86,13 +83,13 @@ def get_current_user(
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        print(f"Decoded payload from token: {payload}")  # Log the decoded payload for debugging
+        print(f"Decoded payload from token: {payload}") 
         email: str = payload.get("sub")
-        print(f"Decoded email from token: {email}")  # Log the decoded email for debugging
+        print(f"Decoded email from token: {email}") 
         if email is None:
             raise credentials_exception
     except JWTError as e:
-        print(f"JWTError during token validation: {str(e)}")  # Log any JWT errors
+        print(f"JWTError during token validation: {str(e)}")
         raise credentials_exception
 
 

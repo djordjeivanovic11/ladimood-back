@@ -131,56 +131,56 @@ class Cart(BaseModel):
     class Config:
         from_attributes = True
 
-# Updated OrderItem schema
 class OrderItem(BaseModel):
     id: Optional[int] = None
-    product: Product  # Full Product object
+    product: Product 
     quantity: int
     color: str
-    size: SizeEnum  # Enum type for internal use
+    size: SizeEnum 
     price: float
 
     class Config:
-        orm_mode = True  # Use orm_mode instead of from_attributes
+        orm_mode = True 
 
 
 class OrderItemResponse(BaseModel):
     id: int
     product_id: int
-    product_name: str  # Flattened field for API response
+    product_name: str  
     quantity: int
     color: str
-    size: str  # String for API response
+    size: str 
     price: float
+    product_image_url: Optional[str] = None
 
     class Config:
-        orm_mode = True  # Consistent with ORM models
+        orm_mode = True  
 
 class OrderResponse(BaseModel):
-    id: Union[int, str]  # Support both int and hashed string
+    id: Union[int, str]
     user_id: int
-    user: Optional[User] = None  # Make it optional if not always included
+    user: Optional[User] = None  
     status: str
     total_price: float
     items: List[OrderItemResponse]
     created_at: datetime.datetime
     updated_at: datetime.datetime
-    address: Optional[dict] = None  # Make it optional if not always included
+    address: Optional[dict] = None  
 
     class Config:
         orm_mode = True
 
 class PublicOrderResponse(BaseModel):
-    id: str  # Change to str to accommodate hashed IDs
+    id: str  
     user_id: int
-    plain_id: Optional[int] = None  # Keep as optional if needed
-    user: Optional[User] = None  # Optional user details
+    plain_id: Optional[int] = None  
+    user: Optional[User] = None 
     status: str
     total_price: float
     items: List[OrderItemResponse]
     created_at: datetime.datetime
     updated_at: datetime.datetime
-    address: Optional[dict] = None  # Optional address field
+    address: Optional[dict] = None  
 
     class Config:
         orm_mode = True
@@ -230,24 +230,31 @@ class Wishlist(BaseModel):
     class Config:
         from_attributes = True
 
-
-# SALES RECORD SCHEMAS #
 class SalesRecordBase(BaseModel):
     user_id: int
     order_id: int
 
-
 class SalesRecordCreate(SalesRecordBase):
-    pass
-
-
-class SalesRecord(SalesRecordBase):
-    id: int
-    user: Optional["User"] 
-    order: Optional["Order"]
+    date_of_sale: datetime
+    buyer_name: str
+    price: float
 
     class Config:
         orm_mode = True
+        arbitrary_types_allowed = True
+
+class SalesRecord(SalesRecordBase):
+    id: int
+    user: Optional["User"]
+    order: Optional["Order"]
+    date_of_sale: datetime
+    buyer_name: str
+    price: float
+
+    class Config:
+        orm_mode = True
+        arbitrary_types_allowed = True
+
 
 
 class UpdateStatusRequest(BaseModel):
