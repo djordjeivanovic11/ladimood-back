@@ -3,7 +3,7 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Order Confirmation</title>
+    <title>Potvrda Narudžbe</title>
     <style>
       /* Inline CSS styles for email compatibility */
       body {
@@ -83,24 +83,24 @@
         <div class="logo-container">
           <img src="/images/logo.png" alt="Ladimood Logo">
         </div>
-        <h1>Order Confirmation</h1>
+        <h1>Potvrda Porudžbine</h1>
       </div>
       <!-- Content -->
       <div class="content">
-        <h2>Hi {{ receiver_name }},</h2>
-        <p>Thank you for your order!</p>
-        <p>Your order <strong>#{{ order_id }}</strong> has been placed successfully.</p>
+        <h2>Poštovani/a {{ receiver_name }},</h2>
+        <p>Hvala na porudžbini!</p>
+        <p>Vaša porudžbina <strong>#{{ order_id }}</strong> je uspješno zabilježena.</p>
         <div class="order-details">
-          <p><strong>Order ID:</strong> {{ order_id }}</p>
-          <p>We will notify you when your items have shipped.</p>
+          <p><strong>ID Narudžbe:</strong> {{ order_id }}</p>
+          <p>Obavijestićemo vas kada vaši artikli budu poslati.</p>
         </div>
         <a href="https://www.ladimood.com/orders/{{ order_id }}" class="button">View Order</a>
-        <p>If you have any questions, feel free to reach out to our support team at any time.</p>
-        <p>Best regards,<br>The Ladimood Team</p>
+        <p>Ako imate bilo kakva pitanja, slobodno nas kontaktirajte u bilo kojem trenutku.</p>
+        <p>Srdačno,<br>Tim Ladimood</p>
       </div>
       <!-- Footer -->
       <div class="footer">
-        &copy; 2023 Ladimood. All rights reserved.<br>
+        &copy; 2025 Ladimood. Sva prava zadržana.<br>
       </div>
     </div>
   </body>
