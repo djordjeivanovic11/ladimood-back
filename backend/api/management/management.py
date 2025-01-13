@@ -124,8 +124,6 @@ def create_sales_record(request: schemas.SalesRecordCreate, db: Session = Depend
     return db_sales_record
 
 
-
-
 @router.get("/orders", response_model=List[schemas.OrderResponse])
 def get_all_orders_with_address(db: Session = Depends(database.get_db)):
     """
@@ -137,7 +135,6 @@ def get_all_orders_with_address(db: Session = Depends(database.get_db)):
             status_code=status.HTTP_404_NOT_FOUND, detail="No orders found"
         )
     return [to_order_response(order, db) for order in orders]
-
 
 
 @router.get("/orders/{order_id}", response_model=schemas.OrderResponse)
