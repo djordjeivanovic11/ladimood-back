@@ -1,5 +1,5 @@
 from fastapi import HTTPException, status # type: ignore
-from sqlalchemy.orm import Session 
+from sqlalchemy.orm import Session, joinedload
 from database import models
 import smtplib
 from email.mime.text import MIMEText
@@ -50,7 +50,9 @@ def add_to_wishlist(db: Session, user_id: int, product_id: int, color: str, size
 
     existing_item = db.query(models.WishlistItem).filter(
         models.WishlistItem.product_id == product_id,
-        models.WishlistItem.wishlist_id == wishlist.id 
+        models.WishlistItem.wishlist_id == wishlist.id,
+        models.WishlistItem.color == color,
+        models.WishlistItem.size == size
     ).first()
 
     if existing_item:
@@ -58,14 +60,21 @@ def add_to_wishlist(db: Session, user_id: int, product_id: int, color: str, size
 
     wishlist_item = models.WishlistItem(
         product_id=product_id,
-        wishlist_id=wishlist.id, 
-        color=color,  
-        size=size    
+        wishlist_id=wishlist.id,
+        color=color,
+        size=size
     )
     db.add(wishlist_item)
     db.commit()
     db.refresh(wishlist_item)
+
+    # Reload with joined product for the response
+    wishlist_item = db.query(models.WishlistItem).options(
+        joinedload(models.WishlistItem.product)
+    ).filter(models.WishlistItem.id == wishlist_item.id).first()
+
     return wishlist_item
+
 
 def remove_from_wishlist(db: Session, wishlist_item_id: int, user_id: int):
     wishlist_item = db.query(models.WishlistItem).filter(

@@ -97,6 +97,20 @@ def get_sales_records(db: Session = Depends(database.get_db)):
 
 @router.post("/sales", response_model=schemas.SalesRecord)
 def create_sales_record(request: schemas.SalesRecordCreate, db: Session = Depends(database.get_db)):
+    # Check if a sales record with the same user_id and order_id already exists
+    existing_sales_record = (
+        db.query(models.SalesRecord)
+        .filter(models.SalesRecord.user_id == request.user_id, models.SalesRecord.order_id == request.order_id)
+        .first()
+    )
+    
+    if existing_sales_record:
+        raise HTTPException(
+            status_code=400, 
+            detail="A sales record for this user and order already exists."
+        )
+
+    # Create a new sales record
     db_sales_record = models.SalesRecord(
         user_id=request.user_id,
         order_id=request.order_id,
@@ -108,6 +122,7 @@ def create_sales_record(request: schemas.SalesRecordCreate, db: Session = Depend
     db.commit()
     db.refresh(db_sales_record)
     return db_sales_record
+
 
 
 

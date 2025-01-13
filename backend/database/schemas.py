@@ -211,12 +211,17 @@ class OrderCreate(BaseModel):
     items: List[OrderItemCreate]
 
 
-# WISHLIST SCHEMA #
-class WishlistItem(BaseModel):
+# WISHLIST SCHEMAS #
+class WishlistItemCreate(BaseModel):
+    product_id: int
+    color: str
+    size: SizeEnum
+
+class WishlistItemRead(BaseModel):
     id: int
     product: Product
-    color: str  
-    size: SizeEnum  
+    color: str
+    size: SizeEnum
 
     class Config:
         from_attributes = True
@@ -224,7 +229,7 @@ class WishlistItem(BaseModel):
 class Wishlist(BaseModel):
     id: int
     user_id: int
-    items: List[WishlistItem]
+    items: List[WishlistItemRead]
     
 
     class Config:

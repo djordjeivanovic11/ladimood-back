@@ -277,23 +277,33 @@ def cancel_order(order_id: str, db: Session = Depends(database.get_db), current_
     db.commit()
     return {"message": "Order canceled successfully"}
 
-
-
 #-----------------------------------#
 #         WISHLIST ROUTES           #
 #-----------------------------------#
 
-@router.post("/wishlist", response_model=schemas.WishlistItem)
-def add_wishlist_item(item: schemas.WishlistItem, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_user)):
-    # Ensure color and size are passed in the function
-    return add_to_wishlist(db, current_user.id, item.product.id, color=item.color, size=item.size)
+@router.post("/wishlist", response_model=schemas.WishlistItemRead)
+def add_wishlist_item(
+    item: schemas.WishlistItemCreate,
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_current_user)
+):
+    return add_to_wishlist(db, current_user.id, item.product_id, color=item.color, size=item.size)
 
-@router.get("/wishlist", response_model=List[schemas.WishlistItem])
-def get_wishlist(db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_user)):
-    wishlist = db.query(models.WishlistItem).filter(models.Wishlist.user_id == current_user.id).all()
-    if not wishlist:
-        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND, detail="Wishlist not found")
-    return wishlist
+@router.get("/wishlist", response_model=List[schemas.WishlistItemRead])
+def get_wishlist(
+    db: Session = Depends(database.get_db),
+    current_user: models.User = Depends(get_current_user),
+):
+    wishlist_items = (
+        db.query(models.WishlistItem)
+        .join(models.Wishlist, models.WishlistItem.wishlist_id == models.Wishlist.id)
+        .filter(models.Wishlist.user_id == current_user.id)
+        .all()
+    )
+    if not wishlist_items:
+        raise HTTPException(status_code=404, detail="Wishlist not found")
+    return wishlist_items
+
 
 @router.delete("/wishlist/{item_id}", response_model=schemas.Message)
 def remove_wishlist_item(item_id: int, db: Session = Depends(database.get_db), current_user: models.User = Depends(get_current_user)):
@@ -418,7 +428,6 @@ def add_to_newsletter(
     new_user = models.NewsletterUser(email=email_data.email)
     db.add(new_user)
     db.commit()
-    
     return None
 
 @router.post("/referrals", status_code=status.HTTP_200_OK)
