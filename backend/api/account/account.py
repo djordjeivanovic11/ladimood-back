@@ -23,6 +23,10 @@ router = APIRouter()
 def get_user_details(current_user: models.User = Depends(get_current_user)):
     return current_user
 
+@router.get("/me", response_model=schemas.User)
+def get_user_me(current_user: models.User = Depends(get_current_user)):
+    return current_user
+
 #-----------------------------------#
 #          ADDRESS ROUTES           #
 #-----------------------------------#
@@ -300,9 +304,9 @@ def get_wishlist(
         .filter(models.Wishlist.user_id == current_user.id)
         .all()
     )
-    if not wishlist_items:
-        raise HTTPException(status_code=404, detail="Wishlist not found")
+    # Return an empty list instead of raising an error
     return wishlist_items
+
 
 
 @router.delete("/wishlist/{item_id}", response_model=schemas.Message)
